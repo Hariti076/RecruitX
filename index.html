@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RecruitX - Find Your Next Career</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg-elevated: #12121a;
+      --fg: #f4f4f5;
+      --muted: #71717a;
+      --accent: #00d4aa;
+      --accent-dim: #00d4aa20;
+      --card: #18181f;
+      --border: #27272a;
+      --chart-1: #00d4aa;
+      --chart-2: #8b5cf6;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, h5, h6 { font-family: 'Space Grotesk', sans-serif; }
+
+    .bg-grid {
+      background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 60px 60px;
+      background-position: center center;
+    }
+
+    .bg-glow {
+      position: fixed; top: -50%; left: -50%; width: 200%; height: 200%;
+      background: radial-gradient(circle at 30% 20%, var(--accent-dim) 0%, transparent 40%),
+                  radial-gradient(circle at 70% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 40%);
+      pointer-events: none; z-index: 0;
+    }
+
+    .noise-overlay {
+      position: fixed; inset: 0; opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 1;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(2deg); }
+    }
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes ticker {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .animate-slide-up {
+      animation: slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      opacity: 0;
+    }
+    
+    .ticker-wrap {
+      overflow: hidden;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .ticker {
+      display: flex;
+      animation: ticker 20s linear infinite;
+    }
+
+    .stagger-1 { animation-delay: 0.1s; }
+    .stagger-2 { animation-delay: 0.2s; }
+    .stagger-3 { animation-delay: 0.3s; }
+    .stagger-4 { animation-delay: 0.4s; }
+    .stagger-5 { animation-delay: 0.5s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+
+    .btn-primary {
+      background: var(--accent); color: var(--bg); font-weight: 600;
+      padding: 0.75rem 1.5rem; border-radius: 8px; border: none;
+      cursor: pointer; transition: all 0.2s ease; font-family: 'Space Grotesk', sans-serif;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--accent-dim); }
+    
+    .btn-secondary {
+      background: transparent; color: var(--fg); font-weight: 500;
+      padding: 0.75rem 1.5rem; border-radius: 8px; border: 1px solid var(--border);
+      cursor: pointer; transition: all 0.2s ease;
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    .input-field {
+      background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+      padding: 0.875rem 1rem; color: var(--fg); transition: all 0.2s ease; width: 100%;
+    }
+    .input-field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+    .input-field::placeholder { color: var(--muted); }
+
+    .job-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 1.5rem; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer; position: relative; overflow: hidden;
+    }
+    .job-card::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, var(--accent-dim) 0%, transparent 60%);
+      opacity: 0; transition: opacity 0.3s ease;
+    }
+    .job-card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); }
+    .job-card:hover::before { opacity: 1; }
+    .job-card-content { position: relative; z-index: 1; }
+
+    .tag {
+      display: inline-flex; align-items: center; padding: 0.375rem 0.75rem;
+      border-radius: 20px; font-size: 0.75rem; font-weight: 500;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+    }
+    .tag-remote { border-color: #22c55e30; color: #22c55e; background: #22c55e10; }
+    .tag-onsite { border-color: #f59e0b30; color: #f59e0b; background: #f59e0b10; }
+    .tag-hybrid { border-color: #8b5cf630; color: #8b5cf6; background: #8b5cf610; }
+    .tag-fulltime { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .tag-parttime { border-color: #ec489930; color: #ec4899; background: #ec489910; }
+    .tag-contract { border-color: #06b6d430; color: #06b6d4; background: #06b6d410; }
+
+    .filter-pill {
+      padding: 0.5rem 1rem; border-radius: 24px; font-size: 0.875rem; font-weight: 500;
+      background: var(--card); border: 1px solid var(--border); color: var(--muted);
+      cursor: pointer; transition: all 0.2s ease;
+    }
+    .filter-pill:hover { color: var(--fg); border-color: var(--muted); }
+    .filter-pill.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+    .company-logo {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 1.25rem; font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .bookmark-btn {
+      width: 36px; height: 36px; border-radius: 8px; border: none;
+      background: var(--bg-elevated); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .bookmark-btn:hover { background: var(--accent-dim); }
+    .bookmark-btn.saved { background: var(--accent); }
+    .bookmark-btn.saved svg { fill: var(--bg); stroke: var(--bg); }
+
+    .stat-card {
+      background: linear-gradient(135deg, var(--card) 0%, var(--bg-elevated) 100%);
+      border: 1px solid var(--border); border-radius: 16px;
+      padding: 2rem; text-align: center; transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card:hover { transform: scale(1.02); border-color: var(--accent); }
+    .stat-number {
+      font-family: 'Space Grotesk', sans-serif; font-size: 3rem;
+      font-weight: 700; color: var(--accent); line-height: 1;
+    }
+
+    .search-container {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;
+    }
+    .search-input-wrapper { flex: 1; min-width: 200px; position: relative; }
+    .search-input-wrapper svg {
+      position: absolute; left: 1rem; top: 50%;
+      transform: translateY(-50%); color: var(--muted);
+    }
+    .search-input-wrapper input { padding-left: 2.75rem; }
+
+    nav {
+      backdrop-filter: blur(20px);
+      background: rgba(10, 10, 15, 0.8);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px); z-index: 100;
+      opacity: 0; visibility: hidden; transition: all 0.3s ease;
+    }
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+
+    .modal-content {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 24px; width: 94%; max-width: 700px;
+      max-height: 90vh; overflow-y: auto; z-index: 101;
+      opacity: 0; visibility: hidden;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-content.active { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
+
+    /* Footer Styles */
+    footer {
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+    }
+    .footer-link {
+      color: var(--muted);
+      transition: color 0.2s ease;
+      font-size: 0.9rem;
+    }
+    .footer-link:hover { color: var(--accent); }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <div class="bg-glow"></div>
+  <div class="noise-overlay"></div>
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <a href="#" class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--accent)] to-emerald-400 flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-[var(--bg)]">
+              <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+          </div>
+          <span class="font-bold text-xl font-['Space_Grotesk']">RecruitX</span>
+        </a>
+
+        <div class="hidden md:flex items-center gap-8">
+          <a href="#jobs" class="text-[var(--muted)] hover:text-[var(--fg)] transition-colors">Browse Jobs</a>
+          <a href="#companies" class="text-[var(--muted)] hover:text-[var(--fg)] transition-colors">Companies</a>
+          <a href="#trends" class="text-[var(--muted)] hover:text-[var(--fg)] transition-colors">Trends</a>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button class="btn-secondary hidden sm:block">Sign In</button>
+          <button class="btn-primary">Get Started</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative min-h-screen flex items-center pt-16 bg-grid">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10">
+      <div class="max-w-4xl">
+        <div class="animate-slide-up stagger-1">
+          <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--accent-dim)] border border-[var(--accent)] text-[var(--accent)] text-sm font-medium mb-6">
+            <span class="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse"></span>
+            15,000+ Active Listings
+          </span>
+        </div>
+
+        <h1 class="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight mb-6 animate-slide-up stagger-2">
+          Find Your Next
+          <span class="block text-[var(--accent)]">Career Move</span>
+        </h1>
+
+        <p class="text-xl text-[var(--muted)] mb-10 max-w-2xl animate-slide-up stagger-3">
+          Discover opportunities at top companies. Smart matching, real-time updates, and a seamless application process.
+        </p>
+
+        <!-- Search Box -->
+        <div class="search-container animate-slide-up stagger-4">
+          <div class="search-input-wrapper">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.3-4.3"/>
+            </svg>
+            <input type="text" id="searchInput" class="input-field" placeholder="Job title, skills, or company" aria-label="Search jobs">
+          </div>
+          <div class="search-input-wrapper">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            <input type="text" id="locationInput" class="input-field" placeholder="Location" aria-label="Location">
+          </div>
+          <button id="searchBtn" class="btn-primary whitespace-nowrap flex items-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.3-4.3"/>
+            </svg>
+            Search Jobs
+          </button>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="flex flex-wrap gap-8 mt-12 animate-slide-up stagger-5">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-[var(--accent-dim)] flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <div>
+              <div class="font-bold text-lg">250K+</div>
+              <div class="text-sm text-[var(--muted)]">Active Users</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-[var(--accent-dim)] flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+                <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/>
+                <path d="m9 12 2 2 4-4"/>
+              </svg>
+            </div>
+            <div>
+              <div class="font-bold text-lg">15K+</div>
+              <div class="text-sm text-[var(--muted)]">Companies</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Elements (Flashcards) -->
+    <div class="absolute right-0 top-1/2 -translate-y-1/2 hidden xl:block pointer-events-none">
+      <div class="relative" style="animation: float 6s ease-in-out infinite;">
+        <div class="w-80 h-96 bg-gradient-to-br from-[var(--card)] to-[var(--bg-elevated)] rounded-3xl border border-[var(--border)] p-6 shadow-2xl">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold">G</div>
+            <div>
+              <div class="font-semibold">Google</div>
+              <div class="text-sm text-[var(--muted)]">Senior UX Designer</div>
+            </div>
+          </div>
+          <div class="flex gap-2 mb-4">
+            <span class="tag tag-remote">Remote</span>
+            <span class="tag tag-fulltime">Full-time</span>
+          </div>
+          <div class="text-2xl font-bold text-[var(--accent)] mb-2">$180K - $250K</div>
+          <div class="text-sm text-[var(--muted)]">San Francisco, CA</div>
+        </div>
+        
+        <div class="absolute -bottom-8 -left-16 w-64 bg-[var(--card)] rounded-2xl border border-[var(--border)] p-4 shadow-xl" style="animation: float 6s ease-in-out infinite; animation-delay: -2s;">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-bold">S</div>
+            <div class="font-medium text-sm">Stripe</div>
+          </div>
+          <div class="text-xs text-[var(--muted)]">Application viewed by recruiter</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ticker -->
+  <div class="ticker-wrap py-3 relative z-10">
+    <div class="ticker">
+      <div class="flex items-center gap-8 px-4">
+        <span class="text-sm font-semibold text-[var(--fg)]">TOP HIRES TODAY:</span>
+        <span class="text-sm text-[var(--muted)]">Sarah L. hired at <strong class="text-[var(--fg)]">Google</strong> as Product Manager</span>
+        <span class="text-[var(--border)]">|</span>
+        <span class="text-sm text-[var(--muted)]">Mike R. hired at <strong class="text-[var(--fg)]">Stripe</strong> as Backend Engineer</span>
+        <span class="text-[var(--border)]">|</span>
+        <span class="text-sm text-[var(--muted)]">Anna K. hired at <strong class="text-[var(--fg)]">Apple</strong> as Designer</span>
+        <span class="text-[var(--border)]">|</span>
+        <span class="text-sm text-[var(--muted)]">James W. hired at <strong class="text-[var(--fg)]">Netflix</strong> as Data Scientist</span>
+      </div>
+      <div class="flex items-center gap-8 px-4">
+        <span class="text-sm font-semibold text-[var(--fg)]">TOP HIRES TODAY:</span>
+        <span class="text-sm text-[var(--muted)]">Sarah L. hired at <strong class="text-[var(--fg)]">Google</strong> as Product Manager</span>
+        <span class="text-[var(--border)]">|</span>
+        <span class="text-sm text-[var(--muted)]">Mike R. hired at <strong class="text-[var(--fg)]">Stripe</strong> as Backend Engineer</span>
+        <span class="text-[var(--border)]">|</span>
+        <span class="text-sm text-[var(--muted)]">Anna K. hired at <strong class="text-[var(--fg)]">Apple</strong> as Designer</span>
+        <span class="text-[var(--border)]">|</span>
+        <span class="text-sm text-[var(--muted)]">James W. hired at <strong class="text-[var(--fg)]">Netflix</strong> as Data Scientist</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <section id="jobs" class="py-8 border-y border-[var(--border)] bg-[var(--bg-elevated)]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-wrap items-center gap-4">
+        <span class="text-sm text-[var(--muted)] font-medium">Filter by:</span>
+        <div class="flex flex-wrap gap-2" role="group" aria-label="Job type filters">
+          <button class="filter-pill active" data-filter="all">All Jobs</button>
+          <button class="filter-pill" data-filter="remote">Remote</button>
+          <button class="filter-pill" data-filter="onsite">On-site</button>
+          <button class="filter-pill" data-filter="hybrid">Hybrid</button>
+          <button class="filter-pill" data-filter="fulltime">Full-time</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Job Listings -->
+  <section class="py-16 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <h2 class="text-3xl font-bold mb-2">Latest Opportunities</h2>
+          <p class="text-[var(--muted)]" id="jobCount">Showing 0 jobs</p>
+        </div>
+        <select id="sortSelect" class="input-field w-auto" aria-label="Sort jobs">
+          <option value="newest">Newest First</option>
+          <option value="salary-high">Highest Salary</option>
+          <option value="salary-low">Lowest Salary</option>
+        </select>
+      </div>
+
+      <div id="jobsGrid" class="grid gap-4 md:grid-cols-2"></div>
+      
+      <div class="text-center mt-12">
+        <button id="loadMoreBtn" class="btn-secondary text-lg px-8 py-4">Load More Jobs</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section -->
+  <section id="trends" class="py-20 relative z-10 border-t border-[var(--border)]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl font-bold mb-4">Platform Statistics</h2>
+        <p class="text-[var(--muted)]">Real-time market insights</p>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div class="stat-card">
+          <div class="stat-number" data-count="15000">0</div>
+          <div class="text-[var(--muted)] mt-2">Active Jobs</div>
+          <!-- Sparkline SVG -->
+          <svg class="w-full h-8 mt-2" viewBox="0 0 100 20" preserveAspectRatio="none">
+            <path d="M0,15 Q10,10 20,15 T40,12 T60,18 T80,5 T100,10" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" data-count="18500">0</div>
+          <div class="text-[var(--muted)] mt-2">Companies</div>
+          <svg class="w-full h-8 mt-2" viewBox="0 0 100 20" preserveAspectRatio="none">
+            <path d="M0,10 Q25,5 50,10 T100,5" fill="none" stroke="#8b5cf6" stroke-width="1.5" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" data-count="320000">0</div>
+          <div class="text-[var(--muted)] mt-2">Job Seekers</div>
+          <svg class="w-full h-8 mt-2" viewBox="0 0 100 20" preserveAspectRatio="none">
+            <path d="M0,18 Q20,18 40,5 T100,8" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" data-count="12500">0</div>
+          <div class="text-[var(--muted)] mt-2">Hired This Month</div>
+          <svg class="w-full h-8 mt-2" viewBox="0 0 100 20" preserveAspectRatio="none">
+            <path d="M0,12 Q30,18 50,10 T100,2" fill="none" stroke="#ec4899" stroke-width="1.5" opacity="0.5"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Companies -->
+  <section id="companies" class="py-20 border-t border-[var(--border)] relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl font-bold mb-4">Featured Companies</h2>
+        <p class="text-[var(--muted)]">Join teams building the future</p>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4" id="companiesGrid"></div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-12 relative z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid md:grid-cols-4 gap-8 mb-8">
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--accent)] to-emerald-400 flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-[var(--bg)]">
+                <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+              </svg>
+            </div>
+            <span class="font-bold text-xl font-['Space_Grotesk']">RecruitX</span>
+          </div>
+          <p class="text-[var(--muted)] text-sm">Connecting talent with opportunity since 2024.</p>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4 text-[var(--fg)]">For Job Seekers</h4>
+          <ul class="space-y-3">
+            <li><a href="#" class="footer-link">Browse Jobs</a></li>
+            <li><a href="#" class="footer-link">Career Advice</a></li>
+            <li><a href="#" class="footer-link">Resume Builder</a></li>
+            <li><a href="#" class="footer-link">Salary Calculator</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4 text-[var(--fg)]">For Employers</h4>
+          <ul class="space-y-3">
+            <li><a href="#" class="footer-link">Post a Job</a></li>
+            <li><a href="#" class="footer-link">Pricing</a></li>
+            <li><a href="#" class="footer-link">Recruiting Solutions</a></li>
+            <li><a href="#" class="footer-link">Employer Blog</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4 text-[var(--fg)]">Company</h4>
+          <ul class="space-y-3">
+            <li><a href="#" class="footer-link">About Us</a></li>
+            <li><a href="#" class="footer-link">Contact</a></li>
+            <li><a href="#" class="footer-link">Privacy Policy</a></li>
+            <li><a href="#" class="footer-link">Terms of Service</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-t border-[var(--border)] pt-8 flex flex-wrap items-center justify-between gap-4">
+        <p class="text-[var(--muted)] text-sm">2024 RecruitX. All rights reserved.</p>
+        <div class="flex gap-4">
+          <a href="#" class="text-[var(--muted)] hover:text-[var(--accent)] transition-colors" aria-label="Twitter">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </a>
+          <a href="#" class="text-[var(--muted)] hover:text-[var(--accent)] transition-colors" aria-label="LinkedIn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+          </a>
+          <a href="#" class="text-[var(--muted)] hover:text-[var(--accent)] transition-colors" aria-label="GitHub">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modalOverlay"></div>
+  <div class="modal-content" id="jobModal">
+    <div class="p-8">
+      <div class="flex items-start justify-between mb-6">
+        <div class="flex items-center gap-4">
+          <div class="company-logo" id="modalLogo">G</div>
+          <div>
+            <h3 class="text-2xl font-bold" id="modalTitle">Job Title</h3>
+            <p class="text-[var(--muted)]" id="modalCompany">Company Name</p>
+          </div>
+        </div>
+        <button id="closeModal" class="bookmark-btn" aria-label="Close modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="flex flex-wrap gap-2 mb-6" id="modalTags"></div>
+
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-3 gap-4 mb-6 p-4 bg-[var(--bg-elevated)] rounded-xl">
+        <div class="text-center border-r border-[var(--border)]">
+          <div class="text-sm text-[var(--muted)]">Openings</div>
+          <div class="font-bold text-lg" id="modalOpenings">3</div>
+        </div>
+        <div class="text-center border-r border-[var(--border)]">
+          <div class="text-sm text-[var(--muted)]">Applicants</div>
+          <div class="font-bold text-lg" id="modalApplicants">124</div>
+        </div>
+        <div class="text-center">
+          <div class="text-sm text-[var(--muted)]">Match</div>
+          <div class="font-bold text-lg text-[var(--accent)]" id="modalMatch">85%</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-6 p-4 bg-[var(--bg-elevated)] rounded-xl">
+        <div>
+          <div class="text-sm text-[var(--muted)]">Salary Range</div>
+          <div class="font-bold text-[var(--accent)]" id="modalSalary">$120K - $180K</div>
+        </div>
+        <div>
+          <div class="text-sm text-[var(--muted)]">Location</div>
+          <div class="font-semibold" id="modalLocation">San Francisco, CA</div>
+        </div>
+      </div>
+
+      <!-- Applicant Activity Graph -->
+      <div class="mb-6 bg-[var(--bg)] rounded-xl border border-[var(--border)] p-4">
+        <h4 class="font-semibold mb-4 text-sm">Applicant Activity (Last 7 Days)</h4>
+        <div class="relative h-32">
+            <svg id="activityGraph" width="100%" height="100%" viewBox="0 0 300 100" preserveAspectRatio="none">
+                <!-- Grid lines -->
+                <line x1="0" y1="25" x2="300" y2="25" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4"/>
+                <line x1="0" y1="50" x2="300" y2="50" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4"/>
+                <line x1="0" y1="75" x2="300" y2="75" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4"/>
+            </svg>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <h4 class="font-semibold mb-3">Job Description</h4>
+        <p class="text-[var(--muted)] leading-relaxed" id="modalDescription">Description...</p>
+      </div>
+
+      <div class="mb-6">
+        <h4 class="font-semibold mb-3">Requirements</h4>
+        <ul class="space-y-2 text-[var(--muted)]" id="modalRequirements"></ul>
+      </div>
+
+      <div class="flex gap-3">
+        <button class="btn-primary flex-1">Apply Now</button>
+        <button class="btn-secondary" id="modalSave">Save Job</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+      // --- Data ---
+      const jobs = [
+        { id: 1, title: "Senior Frontend Engineer", company: "Google", logo: "google", logoColor: "from-blue-500 to-blue-600", salary: [180, 250], location: "San Francisco, CA", type: "fulltime", workplace: "remote", posted: "2h ago", openings: 3, applicants: 124, match: 85, description: "Building next-gen UI frameworks.", requirements: ["React", "TypeScript", "System Design"], trend: [10, 15, 12, 18, 20, 25, 30] },
+        { id: 2, title: "Product Designer", company: "Stripe", logo: "stripe", logoColor: "from-purple-500 to-pink-500", salary: [150, 200], location: "New York, NY", type: "fulltime", workplace: "hybrid", posted: "5h ago", openings: 1, applicants: 89, match: 78, description: "Designing financial products.", requirements: ["Figma", "UX Research", "Prototyping"], trend: [5, 8, 12, 15, 14, 18, 22] },
+        { id: 3, title: "Backend Developer", company: "Netflix", logo: "netflix", logoColor: "from-red-500 to-red-600", salary: [160, 220], location: "Los Gatos, CA", type: "fulltime", workplace: "onsite", posted: "1d ago", openings: 2, applicants: 210, match: 65, description: "Scaling streaming infrastructure.", requirements: ["Java", "AWS", "Microservices"], trend: [20, 22, 25, 30, 35, 40, 45] },
+        { id: 4, title: "DevOps Engineer", company: "Amazon", logo: "amazon", logoColor: "from-orange-400 to-yellow-500", salary: [140, 190], location: "Seattle, WA", type: "fulltime", workplace: "remote", posted: "1d ago", openings: 5, applicants: 340, match: 92, description: "CI/CD pipelines and infrastructure.", requirements: ["Terraform", "Kubernetes", "AWS"], trend: [15, 18, 20, 22, 28, 32, 38] },
+        { id: 5, title: "Data Scientist", company: "Meta", logo: "meta", logoColor: "from-blue-600 to-blue-700", salary: [170, 240], location: "Remote", type: "fulltime", workplace: "remote", posted: "2d ago", openings: 4, applicants: 156, match: 88, description: "Building recommendation engines.", requirements: ["Python", "ML", "TensorFlow"], trend: [8, 10, 14, 16, 20, 22, 28] },
+        { id: 6, title: "UX Researcher", company: "Apple", logo: "apple", logoColor: "from-gray-600 to-gray-700", salary: [130, 180], location: "Cupertino, CA", type: "contract", workplace: "hybrid", posted: "3d ago", openings: 1, applicants: 67, match: 72, description: "Research for new hardware products.", requirements: ["User Research", "Analytics", "Presentation"], trend: [5, 7, 6, 9, 10, 12, 11] },
+        { id: 7, title: "Mobile Developer", company: "Spotify", logo: "spotify", logoColor: "from-green-500 to-green-600", salary: [145, 195], location: "Stockholm", type: "fulltime", workplace: "remote", posted: "3d ago", openings: 2, applicants: 198, match: 81, description: "Improving mobile streaming experience.", requirements: ["Swift", "Kotlin", "Audio APIs"], trend: [12, 15, 18, 22, 24, 28, 30] },
+        { id: 8, title: "Security Engineer", company: "Cloudflare", logo: "cloudflare", logoColor: "from-orange-500 to-red-500", salary: [155, 210], location: "Austin, TX", type: "fulltime", workplace: "onsite", posted: "4d ago", openings: 3, applicants: 145, match: 69, description: "Securing internet infrastructure.", requirements: ["Network Security", "Penetration Testing", "Go"], trend: [9, 12, 15, 18, 20, 24, 25] },
+        { id: 9, title: "AI Researcher", company: "OpenAI", logo: "openai", logoColor: "from-teal-400 to-cyan-500", salary: [200, 350], location: "San Francisco, CA", type: "fulltime", workplace: "hybrid", posted: "1d ago", openings: 2, applicants: 450, match: 95, description: "Advancing AGI research.", requirements: ["PhD", "PyTorch", "Transformers"], trend: [30, 40, 50, 60, 75, 90, 110] },
+        { id: 10, title: "Cloud Architect", company: "Microsoft", logo: "microsoft", logoColor: "from-sky-400 to-blue-500", salary: [165, 230], location: "Redmond, WA", type: "fulltime", workplace: "hybrid", posted: "5d ago", openings: 4, applicants: 210, match: 80, description: "Designing Azure solutions.", requirements: ["Azure", "Architecture", "DevOps"], trend: [10, 12, 15, 18, 20, 22, 26] },
+        { id: 11, title: "Blockchain Dev", company: "Coinbase", logo: "coinbase", logoColor: "from-indigo-500 to-purple-600", salary: [175, 260], location: "Remote", type: "fulltime", workplace: "remote", posted: "6h ago", openings: 2, applicants: 180, match: 75, description: "Building Web3 wallets.", requirements: ["Solidity", "Rust", "Cryptography"], trend: [15, 20, 25, 30, 35, 40, 50] },
+        { id: 12, title: "Game Developer", company: "Unity", logo: "unity", logoColor: "from-gray-400 to-gray-600", salary: [120, 170], location: "Remote", type: "contract", workplace: "remote", posted: "2d ago", openings: 3, applicants: 90, match: 82, description: "Creating AR/VR experiences.", requirements: ["C#", "Unity 3D", "Shaders"], trend: [5, 8, 10, 12, 15, 18, 20] }
+      ];
+
+      const companies = [
+        { name: "Google", logo: "google", color: "from-blue-500 to-blue-600", jobs: 245 },
+        { name: "Apple", logo: "apple", color: "from-gray-600 to-gray-700", jobs: 189 },
+        { name: "Meta", logo: "meta", color: "from-blue-600 to-blue-700", jobs: 156 },
+        { name: "Amazon", logo: "amazon", color: "from-orange-400 to-yellow-500", jobs: 312 },
+        { name: "Stripe", logo: "stripe", color: "from-purple-500 to-pink-500", jobs: 78 },
+        { name: "Netflix", logo: "netflix", color: "from-red-500 to-red-600", jobs: 64 }
+      ];
+
+      const logoSVGs = {
+        google: `<svg viewBox="0 0 24 24" class="w-6 h-6"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`,
+        apple: `<svg viewBox="0 0 24 24" class="w-6 h-6" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>`,
+        meta: `<svg viewBox="0 0 24 24" class="w-6 h-6" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" fill="none"/><path d="M12 2C6.486 2 2 6.486 2 12c0 5.515 4.486 10 10 10s10-4.485 10-10c0-5.514-4.486-10-10-10zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z" fill="none"/><path d="M8.5 8c-1.123 0-2.102.603-2.604 1.5h-.006c-.87 1.514-.345 3.456 1.17 4.326l.006.004c.4.23.856.363 1.334.363 1.123 0 2.102-.603 2.604-1.5h.006c.87-1.514.345-3.456-1.17-4.326l-.006-.004C9.434 8.133 8.978 8 8.5 8zm7 0c-.478 0-.934.133-1.334.363l-.006.004c-1.515.87-2.04 2.812-1.17 4.326h.006c.502.897 1.481 1.5 2.604 1.5.478 0 .934-.133 1.334-.363l.006-.004c1.515-.87 2.04-2.812 1.17-4.326h-.006C16.602 8.603 15.623 8 14.5 8z"/></svg>`,
+        // Updated Amazon Logo (a + arrow)
+        amazon: `<svg viewBox="0 0 24 24" class="w-6 h-6"><path d="M15.93 10.4c0 1.23.03 2.25-.59 3.34-.5.9-1.3 1.45-2.18 1.45-1.21 0-1.92-.92-1.92-2.28 0-2.68 2.4-3.17 4.69-3.17v.66zm3.18 7.71c-.21.19-.51.2-.74.05-1.04-.86-1.22-1.26-1.79-2.08-1.71 1.74-2.92 2.26-5.14 2.26-2.62 0-4.66-1.62-4.66-4.86 0-2.53 1.37-4.25 3.32-5.1 1.69-.75 4.05-.88 5.85-1.08v-.4c0-.75.06-1.63-.38-2.28-.38-.58-1.12-.82-1.77-.82-1.2 0-2.27.62-2.53 1.9-.05.28-.26.55-.54.56l-3.01-.32c-.25-.06-.54-.26-.47-.65.7-3.68 4.03-4.79 7.01-4.79 1.53 0 3.53.41 4.73 1.57 1.53 1.43 1.38 3.34 1.38 5.41v4.9c0 1.47.61 2.12 1.18 2.91.2.28.25.62-.01.82-.64.54-1.78 1.53-2.41 2.09l-.01-.01M4.62 18.94c3.14 2.1 7.3 2.38 10.79.98.13-.06.23.07.12.17-.85.83-2.78 2.14-5.36 2.14-2.92 0-5.09-1.26-6.59-2.68-.09-.09-.02-.22.09-.22h.73c.11 0 .18.02.22.09v-.48z" fill="#FF9900"/></svg>`,
+        stripe: `<svg viewBox="0 0 24 24" class="w-6 h-6" fill="currentColor"><path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg>`,
+        // Updated Netflix Logo (N Ribbon)
+        netflix: `<svg viewBox="0 0 24 24" class="w-6 h-6"><path d="M13.77 0V9.78L7.98 0H5.4v24l3.57-1.72V13.5L13.77 24h2.85V0h-2.85z" fill="#E50914"/></svg>`,
+        spotify: `<svg viewBox="0 0 24 24" class="w-6 h-6" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>`,
+        cloudflare: `<svg viewBox="0 0 24 24" class="w-6 h-6" fill="currentColor"><path d="M17.400 13.226l-4.116-2.588-.238.29 3.163 1.99zm-9.826-2.53l.373-.026-.13-.666h-.225l-.55.666zm3.875 4.646l-3.916.316-.086-.48.922-.076-.19-.976-.923.076-.086-.48 3.916-.316.086.48-.923.076.19.976.923-.076zm4.75-2.822l.11.566-.922.076.19.976.923-.076.086.48-3.916.316-.086-.48.923-.076-.19-.976-.923.076-.086-.48 3.916-.316zm3.168.42l.27 1.38-3.916.316-.27-1.38zm-9.32-4.593l-.187-.96 1.845-.152-.063-.318-1.845.152-.18-.92 1.846-.152-.062-.318-2.767.228.5 2.598zm-4.493 2.33l-1.38.113.25 1.28 1.38-.113zm2.47 2.34l-.5.04.086.44.5-.04zm-4.82-1.8l-.5.04.086.44.5-.04zm1.66.13l-.5.04.086.44.5-.04z"/></svg>`,
+        openai: `<svg viewBox="0 0 24 24" class="w-6 h-6" fill="currentColor"><path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08-4.778 2.758a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"/></svg>`,
+        microsoft: `<svg viewBox="0 0 24 24" class="w-6 h-6" fill="currentColor"><path d="M0 0h11.377v11.352H0zm12.623 0H24v11.352H12.623zM0 12.623h11.377V24H0zm12.623 0H24V24H12.623z"/></svg>`,
+        coinbase: `<svg viewBox="0 0 24 24" class="w-6 h-6" fill="currentColor"><path d="M12.006 0c-3.87 0-7.3 2.305-8.823 5.738h4.46c1.192-1.635 3.23-2.62 5.363-2.62 3.597 0 6.538 2.942 6.538 6.538 0 3.596-2.941 6.538-6.538 6.538-2.133 0-4.171-.985-5.362-2.62h-4.46C4.706 16.815 8.136 19.12 12.006 19.12c4.992 0 9.046-4.054 9.046-9.046S16.998 0 12.006 0zM1.336 7.326v2.162h6.03c.08.723.22 1.425.42 2.101h2.24c-.19-.676-.33-1.378-.41-2.101h6.03V7.326h-6.03c.08-.724.22-1.426.41-2.102h-2.24c-.2.676-.34 1.378-.42 2.102z"/></svg>`,
+        unity: `<svg viewBox="0 0 24 24" class="w-6 h-6" fill="currentColor"><path d="M10.4 17.8L5.4 12l5-5.8 2 3.4-3 2.4 3 2.4-2 3.4zM4.6 4.6L0 12l4.6 7.4 2.6-4.6-1.7-2.8 1.7-2.8-2.6-4.6zm8.2 0l-2 3.4 3 2.4-3 2.4 2 3.4 5-5.8-5-5.8zm7.2 0l-2.6 4.6 1.7 2.8-1.7 2.8 2.6 4.6L24 12l-4-7.4z"/></svg>`
+      };
+
+      let savedJobs = new Set();
+      let currentFilter = 'all';
+      let displayedJobs = jobs;
+
+      // --- DOM Elements ---
+      const jobsGrid = document.getElementById('jobsGrid');
+      const jobCount = document.getElementById('jobCount');
+      const modalOverlay = document.getElementById('modalOverlay');
+      const jobModal = document.getElementById('jobModal');
+      const closeModalBtn = document.getElementById('closeModal');
+      const searchInput = document.getElementById('searchInput');
+      const locationInput = document.getElementById('locationInput');
+      const searchBtn = document.getElementById('searchBtn');
+      const sortSelect = document.getElementById('sortSelect');
+      const loadMoreBtn = document.getElementById('loadMoreBtn');
+      const filterPills = document.querySelectorAll('.filter-pill');
+      const companiesGrid = document.getElementById('companiesGrid');
+      const statNumbers = document.querySelectorAll('.stat-number');
+
+      // --- Render Functions ---
+      function renderJobs() {
+        jobsGrid.innerHTML = displayedJobs.map((job, index) => `
+          <article class="job-card animate-slide-up" style="animation-delay: ${index * 0.05}s" data-id="${job.id}">
+            <div class="job-card-content">
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center gap-3">
+                  <div class="company-logo bg-gradient-to-br ${job.logoColor} text-white flex items-center justify-center">
+                    ${logoSVGs[job.logo] || job.logo.charAt(0)}
+                  </div>
+                  <div>
+                    <h3 class="font-semibold text-lg">${job.title}</h3>
+                    <p class="text-[var(--muted)]">${job.company}</p>
+                  </div>
+                </div>
+                <button class="bookmark-btn ${savedJobs.has(job.id) ? 'saved' : ''}" data-id="${job.id}" aria-label="Save job">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="flex flex-wrap gap-2 mb-4">
+                <span class="tag tag-${job.workplace}">${capitalizeFirst(job.workplace)}</span>
+                <span class="tag tag-${job.type}">${capitalizeFirst(job.type)}</span>
+              </div>
+              <div class="flex items-center gap-4 mb-3 text-sm text-[var(--muted)]">
+                <span><strong class="text-[var(--fg)]">${job.openings}</strong> Openings</span>
+                <span><strong class="text-[var(--fg)]">${job.applicants}</strong> Applicants</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div>
+                  <span class="text-[var(--accent)] font-semibold text-lg">$${job.salary[0]}K - $${job.salary[1]}K</span>
+                  <span class="text-[var(--muted)] text-sm ml-2">${job.location}</span>
+                </div>
+                <span class="text-xs text-[var(--muted)]">${job.posted}</span>
+              </div>
+            </div>
+          </article>
+        `).join('');
+
+        jobCount.textContent = `Showing ${displayedJobs.length} jobs`;
+        
+        document.querySelectorAll('.job-card').forEach(card => {
+          card.addEventListener('click', (e) => {
+            if (!e.target.closest('.bookmark-btn')) openJobModal(parseInt(card.dataset.id));
+          });
+        });
+        document.querySelectorAll('.bookmark-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleSaveJob(parseInt(btn.dataset.id));
+          });
+        });
+      }
+
+      function renderCompanies() {
+        companiesGrid.innerHTML = companies.map(company => `
+          <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 text-center hover:border-[var(--accent)] transition-all cursor-pointer hover:scale-105 flex flex-col items-center justify-center">
+            <div class="w-12 h-12 mx-auto rounded-xl bg-white/10 flex items-center justify-center mb-3 p-2">
+               ${logoSVGs[company.logo]}
+            </div>
+            <div class="font-semibold">${company.name}</div>
+            <div class="text-xs text-[var(--muted)]">${company.jobs} jobs</div>
+          </div>
+        `).join('');
+      }
+
+      // --- Logic ---
+      function filterJobs() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const locationTerm = locationInput.value.toLowerCase();
+        displayedJobs = jobs.filter(job => {
+          const matchesSearch = !searchTerm || job.title.toLowerCase().includes(searchTerm) || job.company.toLowerCase().includes(searchTerm);
+          const matchesLocation = !locationTerm || job.location.toLowerCase().includes(locationTerm);
+          const matchesFilter = currentFilter === 'all' || job.workplace === currentFilter || job.type === currentFilter;
+          return matchesSearch && matchesLocation && matchesFilter;
+        });
+        renderJobs();
+      }
+
+      function sortJobs() {
+        const sortValue = sortSelect.value;
+        displayedJobs = [...displayedJobs].sort((a, b) => {
+          if (sortValue === 'salary-high') return b.salary[1] - a.salary[1];
+          if (sortValue === 'salary-low') return a.salary[0] - b.salary[0];
+          return 0;
+        });
+        renderJobs();
+      }
+
+      function toggleSaveJob(jobId) {
+        if (savedJobs.has(jobId)) savedJobs.delete(jobId);
+        else savedJobs.add(jobId);
+        renderJobs();
+      }
+
+      function openJobModal(jobId) {
+        const job = jobs.find(j => j.id === jobId);
+        if (!job) return;
+
+        const modalLogoEl = document.getElementById('modalLogo');
+        modalLogoEl.className = `company-logo bg-gradient-to-br ${job.logoColor} text-white flex items-center justify-center`;
+        modalLogoEl.innerHTML = logoSVGs[job.logo] || job.logo.charAt(0);
+        
+        document.getElementById('modalTitle').textContent = job.title;
+        document.getElementById('modalCompany').textContent = job.company;
+        document.getElementById('modalSalary').textContent = `$${job.salary[0]}K - $${job.salary[1]}K`;
+        document.getElementById('modalLocation').textContent = job.location;
+        document.getElementById('modalDescription').textContent = job.description;
+        document.getElementById('modalOpenings').textContent = job.openings;
+        document.getElementById('modalApplicants').textContent = job.applicants;
+        document.getElementById('modalMatch').textContent = job.match + '%';
+
+        // Draw Graph
+        const svg = document.getElementById('activityGraph');
+        // Clear previous paths/polylines except grid lines
+        const elements = svg.querySelectorAll('path, polyline, circle');
+        elements.forEach(el => el.remove());
+
+        const data = job.trend;
+        const maxVal = Math.max(...data);
+        const points = data.map((val, i) => {
+            const x = (i * 50); // 300/6 steps approx
+            const y = 100 - (val / maxVal * 80); // scale to 80% height
+            return `${x},${y}`;
+        }).join(' ');
+
+        const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+        polyline.setAttribute('points', points);
+        polyline.setAttribute('fill', 'none');
+        polyline.setAttribute('stroke', 'var(--accent)');
+        polyline.setAttribute('stroke-width', '2');
+        polyline.setAttribute('stroke-linecap', 'round');
+        polyline.setAttribute('stroke-linejoin', 'round');
+        svg.appendChild(polyline);
+
+        // Add dots
+        data.forEach((val, i) => {
+            const x = (i * 50);
+            const y = 100 - (val / maxVal * 80);
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', x);
+            circle.setAttribute('cy', y);
+            circle.setAttribute('r', '3');
+            circle.setAttribute('fill', 'var(--bg)');
+            circle.setAttribute('stroke', 'var(--accent)');
+            circle.setAttribute('stroke-width', '2');
+            svg.appendChild(circle);
+        });
+
+        document.getElementById('modalTags').innerHTML = `
+          <span class="tag tag-${job.workplace}">${capitalizeFirst(job.workplace)}</span>
+          <span class="tag tag-${job.type}">${capitalizeFirst(job.type)}</span>
+        `;
+        document.getElementById('modalRequirements').innerHTML = job.requirements.map(req => `
+          <li class="flex items-start gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" class="mt-1 flex-shrink-0"><polyline points="20,6 9,17 4,12"/></svg>
+            ${req}
+          </li>
+        `).join('');
+
+        modalOverlay.classList.add('active');
+        jobModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeModal() {
+        modalOverlay.classList.remove('active');
+        jobModal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+
+      // --- Event Listeners ---
+      filterPills.forEach(pill => pill.addEventListener('click', () => {
+        filterPills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        currentFilter = pill.dataset.filter;
+        filterJobs();
+      }));
+
+      searchBtn.addEventListener('click', filterJobs);
+      searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') filterJobs(); });
+      sortSelect.addEventListener('change', sortJobs);
+      modalOverlay.addEventListener('click', closeModal);
+      closeModalBtn.addEventListener('click', closeModal);
+      
+      loadMoreBtn.addEventListener('click', () => {
+        loadMoreBtn.innerHTML = '<span class="animate-pulse">Loading...</span>';
+        setTimeout(() => {
+          loadMoreBtn.textContent = 'All Jobs Loaded';
+          loadMoreBtn.disabled = true;
+          loadMoreBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }, 1000);
+      });
+
+      // --- Stats Observer ---
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && entry.target.classList.contains('stat-number')) {
+            animateNumber(entry.target);
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.5 });
+
+      statNumbers.forEach(el => observer.observe(el));
+
+      function animateNumber(el) {
+        const target = parseInt(el.dataset.count);
+        const duration = 2000;
+        const start = performance.now();
+        function update(currentTime) {
+          const elapsed = currentTime - start;
+          const progress = Math.min(elapsed / duration, 1);
+          const easeOut = 1 - Math.pow(1 - progress, 3);
+          el.textContent = Math.floor(target * easeOut).toLocaleString();
+          if (progress < 1) requestAnimationFrame(update);
+        }
+        requestAnimationFrame(update);
+      }
+
+      function capitalizeFirst(str) { return str.charAt(0).toUpperCase() + str.slice(1); }
+
+      // Initial Render
+      renderJobs();
+      renderCompanies();
+
+    });
+  </script>
+</body>
+</html>
